@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tax Saving Calculation System</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Hiragino Sans', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            line-height: 1.6;
+            color: #151515;
+        }
+        .container {
+            background-color: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        h1 {
+            color: #614FE0;
+            text-align: center;
+            margin-bottom: 25px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            font-size: 28px;
+        }
+        .form-group {
+            margin-bottom: 18px;
+        }
+        label {
+            display: inline-block;
+            width: 300px;
+            font-weight: 500;
+            color: #333;
+        }
+        input[type="text"], input[type="number"] {
+            width: 220px;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 15px;
+        }
+        input[type="text"]:focus, input[type="number"]:focus {
+            border-color: #614FE0;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(97, 79, 224, 0.1);
+        }
+        button {
+            background-color: #614FE0;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 15px;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #5143C3;
+        }
+        .results {
+            margin-top: 35px;
+            border-top: 1px solid #eee;
+            padding-top: 25px;
+        }
+        .result-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        .result-table th, .result-table td {
+            border: 1px solid #ddd;
+            padding: 12px 15px;
+            text-align: right;
+        }
+        .result-table th {
+            background-color: #f5f7ff;
+            text-align: center;
+            font-weight: 600;
+            color: #333;
+        }
+        .highlight {
+            background-color: #FFF8E7;
+        }
+        
+        /* 印刷ページのスタイル */
+        .print-page {
+            background-color: white;
+            padding: 40px;
+            margin-top: 40px;
+            border: none;
+            border-radius: 16px;
+            display: none;
+            font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.08);
+            color: #151515;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .print-header {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .print-header h1 {
+            margin-bottom: 0;
+            font-size: 32px;
+            font-weight: 700;
+            color: #151515;
+            letter-spacing: -0.02em;
+            line-height: 1.3;
+            position: relative;
+        }
+        .print-header h1::after {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 4px;
+            background: #614FE0;
+            border-radius: 2px;
+        }
+        
+        .result-section {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .tax-comparison-table {
+            flex: 1;
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.07);
+            border: none;
+            table-layout: fixed;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        .tax-comparison-table th {
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 16px;
+            color: white;
+            line-height: 1.3;
+            letter-spacing: -0.01em;
+        }
+        .tax-comparison-table td {
+            padding: 14px 16px;
+            border-top: 1px solid rgba(0,0,0,0.06);
+            line-height: 1.4;
+            vertical-align: middle;
+            box-sizing: border-box;
+            letter-spacing: -0.01em;
+            font-size: 15px;
+            color: #151515;
+            font-weight: 450;
+        }
+        .tax-comparison-table tr:nth-child(4) {
+            border-bottom: 2px solid rgba(0,0,0,0.1);
+        }
+        .tax-comparison-table tr.total-row {
+            border-top: 2px solid rgba(0,0,0,0.1);
+            background-color: rgba(0,0,0,0.02);
+        }
+        .before-tax th {
+            background-color: #5B6BF9;
+        }
+        .after-tax th {
+            background-color: #7749F8;
+        }
+        .diff-tax th {
+            background-color: #E5405E;
+        }
+        .diff-tax td {
+            font-weight: 450;
+        }
+        .diff-tax td span {
+            color: #E5405E;
+            font-weight: 600;
+        }
+        .value-column {
+            text-align: right;
+            font-weight: 600;
+            font-size: 16px;
+            white-space: nowrap;
+            font-feature-settings: "tnum" on;
+            font-variant-numeric: tabular-nums;
+        }
+        .total-row td {
+            font-weight: 700;
+            font-size: 17px;
+            padding-top: 16px;
+            padding-bottom: 16px;
+        }
+        
+        .tax-saving-box {
+            margin: 40px 0;
+            background: linear-gradient(135deg, #FAFAFF 0%, #F4F7FF 100%);
+            border-left: none;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 12px 25px rgba(97, 79, 224, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        .tax-saving-box:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 6px;
+            height: 100%;
+            background: #614FE0;
+            border-radius: 4px 0 0 4px;
+        }
+        .tax-saving-title {
+            color: #151515;
+            font-size: 18px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            letter-spacing: -0.01em;
+        }
+        .tax-saving-title:before {
+            content: '';
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            background-color: #614FE0;
+            margin-right: 12px;
+            border-radius: 50%;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: 12px;
+        }
+        .tax-saving-amount {
+            text-align: center;
+            font-size: 42px;
+            color: #614FE0;
+            font-weight: 700;
+            text-shadow: 0 2px 5px rgba(97, 79, 224, 0.15);
+            letter-spacing: -0.02em;
+            font-feature-settings: "tnum" on;
+            font-variant-numeric: tabular-nums;
+            line-height: 1.2;
+        }
+        
+        .footer-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 40px;
+            color: #666;
+            font-size: 13px;
+            border-top: 1px solid rgba(0,0,0,0.08);
+            padding-top: 20px;
+        }
+        .company-info {
+            display: flex;
+            align-items: center;
+        }
+        .company-logo {
+            width: 32px;
+            height: 32px;
+            background-color: #614FE0;
+            margin-right: 12px;
+            border-radius: 8px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        @media print {
+            .no-print {
+                display: none;
+            }
+            .print-page {
+                display: block;
+                border: none;
+                box-shadow: none;
+                padding: 0;
+                margin: 0;
+            }
+            body {
+                background-color: white;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container no-print">
+        <h1>Tax Saving Calculation System</h1>
+        
+        <div class="form-group">
+            <label for="customerName">顧客名:</label>
+            <input type="text" id="customerName" placeholder="例: 佐藤 様">
+        </div>
+        
+        <div class="form-group">
+            <label for="taxYear">年度 (令和):</label>
+            <input type="number" id="taxYear" placeholder="例: 6" min="1">
+        </div>
+        
+        <div class="form-group">
+            <label for="staffName">担当者名:</label>
+            <input type="text" id="staffName" placeholder="例: 山田 太郎">
+        </div>
+        
+        <div class="form-group">
+            <label for="income6">給与所得額 (6番):</label>
+            <input type="number" id="income6" placeholder="0" min="0">
+        </div>
+        
+        <div class="form-group">
+            <label for="income12">合計所得額 (12番):</label>
+            <input type="number" id="income12" placeholder="0" min="0">
+        </div>
+        
+        <div class="form-group">
+            <label for="deduction25">控除合計額 (25番):</label>
+            <input type="number" id="deduction25" placeholder="0" min="0">
+        </div>
+        
+        <div class="form-group">
+            <label for="donation28">寄付金控除額 (28番):</label>
+            <input type="number" id="donation28" placeholder="0" min="0">
+        </div>
+        
+        <div class="form-group">
+            <label for="totalDeduction29">合計控除額 (29番):</label>
+            <input type="number" id="totalDeduction29" placeholder="0" min="0">
+        </div>
+        
+        <div class="form-group">
+            <label for="taxableIncome30">課税所得金額 (30番):</label>
+            <input type="number" id="taxableIncome30" placeholder="0" min="0">
+        </div>
+        
+        <div class="form-group">
+            <label for="incomeTaxAfter47">申告後の所得税額 (47番):</label>
+            <input type="number" id="incomeTaxAfter47" placeholder="0" min="0">
+        </div>
+        
+        <div class="form-group">
+            <label for="withholding50">源泉徴収額 (50番):</label>
+            <input type="number" id="withholding50" placeholder="0" min="0">
+        </div>
+        
+        <button onclick="calculateTax()">計算する</button>
+        
+        <div id="results" class="results hidden">
+            <h2>計算結果</h2>
+            
+            <table class="result-table">
+                <tr>
+                    <th>項目</th>
+                    <th>申告前</th>
+                    <th>申告後</th>
+                    <th>差額</th>
+                </tr>
+                <tr>
+                    <td>所得税</td>
+                    <td id="incomeTaxBefore">0</td>
+                    <td id="incomeTaxAfter">0</td>
+                    <td id="incomeTaxDiff">0</td>
+                </tr>
+                <tr>
+                    <td>住民税</td>
+                    <td id="residentTaxBefore">0</td>
+                    <td id="residentTaxAfter">0</td>
+                    <td id="residentTaxDiff">0</td>
+                </tr>
+                <tr>
+                    <td>住民税月額</td>
+                    <td id="residentTaxMonthlyBefore">0</td>
+                    <td id="residentTaxMonthlyAfter">0</td>
+                    <td id="residentTaxMonthlyDiff">0</td>
+                </tr>
+                <tr>
+                    <td>合計</td>
+                    <td id="totalTaxBefore">0</td>
+                    <td id="totalTaxAfter">0</td>
+                    <td id="totalTaxDiff">0</td>
+                </tr>
+                <tr class="highlight">
+                    <td>節税額</td>
+                    <td colspan="3" id="taxSaving">0</td>
+                </tr>
+            </table>
+            
+            <div class="nav-buttons">
+                <span>※住民税は100円以下が切り捨てられています</span>
+                <button onclick="printResults()">印刷する</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="printPage" class="print-page">
+        <div class="print-header">
+            <h1><span id="printTaxYear"></span> <span id="printCustomerName"></span>の確定申告効果</h1>
+        </div>
+        
+        <div class="result-section">
+            <table class="tax-comparison-table before-tax">
+                <tr>
+                    <th>節税前の税金</th>
+                </tr>
+                <tr>
+                    <td>所得税<span class="value-column" style="float:right;" id="printIncomeTaxBefore">0</span></td>
+                </tr>
+                <tr>
+                    <td>住民税<span class="value-column" style="float:right;" id="printResidentTaxBefore">0</span></td>
+                </tr>
+                <tr>
+                    <td>住民税月額<span class="value-column" style="float:right;" id="printResidentTaxMonthlyBefore">0</span></td>
+                </tr>
+                <tr class="total-row">
+                    <td>合計<span class="value-column" style="float:right;" id="printTotalTaxBefore">0</span></td>
+                </tr>
+            </table>
+            
+            <table class="tax-comparison-table after-tax">
+                <tr>
+                    <th>節税後の税金</th>
+                </tr>
+                <tr>
+                    <td>所得税<span class="value-column" style="float:right;" id="printIncomeTaxAfter">0</span></td>
+                </tr>
+                <tr>
+                    <td>住民税<span class="value-column" style="float:right;" id="printResidentTaxAfter">0</span></td>
+                </tr>
+                <tr>
+                    <td>住民税月額<span class="value-column" style="float:right;" id="printResidentTaxMonthlyAfter">0</span></td>
+                </tr>
+                <tr class="total-row">
+                    <td>合計<span class="value-column" style="float:right;" id="printTotalTaxAfter">0</span></td>
+                </tr>
+            </table>
+            
+            <table class="tax-comparison-table diff-tax">
+                <tr>
+                    <th>差額</th>
+                </tr>
+                <tr>
+                    <td>所得税<span class="value-column" style="float:right;" id="printIncomeTaxDiff">0</span></td>
+                </tr>
+                <tr>
+                    <td>住民税<span class="value-column" style="float:right;" id="printResidentTaxDiff">0</span></td>
+                </tr>
+                <tr>
+                    <td>住民税月額<span class="value-column" style="float:right;" id="printResidentTaxMonthlyDiff">0</span></td>
+                </tr>
+                <tr class="total-row">
+                    <td>合計<span class="value-column" style="float:right;" id="printTotalTaxDiff">0</span></td>
+                </tr>
+            </table>
+        </div>
+        
+        <div class="tax-saving-box">
+            <div class="tax-saving-title">年間節税効果</div>
+            <div class="tax-saving-amount" id="printTaxSaving">0</div>
+        </div>
+        
+        <div class="footer-info">
+            <div class="company-info">
+                <span id="printStaffName">担当者名</span>
+            </div>
+            <div>
+                作成日: <span id="calculationDate"></span>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function formatNumber(num) {
+            return num.toLocaleString('ja-JP');
+        }
+        
+        function roundDown(num) {
+            return Math.floor(num);
+        }
+        
+        function calculateIncomeTaxBefore(income) {
+            // 申告前の所得税計算 (Excel の式に基づいた所得区分と税率の実装)
+            if (income < 1949000) {
+                return roundDown(income * 0.05);
+            } else if (income < 3299000) {
+                return roundDown(income * 0.1);
+            } else if (income < 6949000) {
+                return roundDown(income * 0.2);
+            } else if (income < 8999000) {
+                return roundDown(income * 0.23);
+            } else if (income < 17999000) {
+                return roundDown(income * 0.33);
+            } else if (income < 39999000) {
+                return roundDown(income * 0.4);
+            } else {
+                return roundDown(income * 0.45);
+            }
+        }
+        
+        function calculateResidentTaxBefore(incomeValue, deductionValue) {
+            // 申告前住民税額の計算: (所得 - 控除) × 10% + 10000円
+            const taxBase = incomeValue - deductionValue;
+            if (taxBase <= 0) return 0;
+            
+            // 100円以下切り捨て
+            return Math.floor((taxBase * 0.1 + 10000) / 100) * 100;
+        }
+        
+        function calculateResidentTaxAfter(taxableIncome, donationAmount, incomeTaxAfter) {
+            // E19の計算: 寄付金控除額(28番) - 申告後の所得税額(47番)
+            const e19Value = Math.max(0, donationAmount - incomeTaxAfter);
+            
+            // 申告後住民税額の計算: 課税所得金額の10%+10000から、E19を引く
+            const basicResidentTax = taxableIncome * 0.1 + 10000;
+            
+            // E19を引いた後の値（0未満にはならない）
+            const adjustedResidentTax = Math.max(0, basicResidentTax - e19Value);
+            
+            // 100円以下切り捨て
+            return Math.floor(adjustedResidentTax / 100) * 100;
+        }
+        
+        function calculateTax() {
+            // 入力値を取得
+            const income6 = Number(document.getElementById('income6').value) || 0;
+            const income12 = Number(document.getElementById('income12').value) || 0;
+            const deduction25 = Number(document.getElementById('deduction25').value) || 0;
+            const donation28 = Number(document.getElementById('donation28').value) || 0;
+            const totalDeduction29 = Number(document.getElementById('totalDeduction29').value) || 0;
+            const taxableIncome30 = Number(document.getElementById('taxableIncome30').value) || 0;
+            const incomeTaxAfter47 = Number(document.getElementById('incomeTaxAfter47').value) || 0;
+            const withholding50 = Number(document.getElementById('withholding50').value) || 0;
+            
+            // 申告前の所得税額を計算
+            const incomeTaxBefore = withholding50;
+            
+            // 申告前の住民税額を計算
+            const residentTaxBefore = calculateResidentTaxBefore(income6, deduction25);
+            
+            // 申告前の住民税月額を計算
+            const residentTaxMonthlyBefore = Math.floor(residentTaxBefore / 12);
+            
+            // 申告前の合計税額
+            const totalTaxBefore = incomeTaxBefore + residentTaxBefore;
+            
+            // 申告後の所得税額
+            const incomeTaxAfter = incomeTaxAfter47;
+            
+            // 申告後の住民税額を計算 (寄付金控除額とE19の計算を考慮)
+            const residentTaxAfter = calculateResidentTaxAfter(taxableIncome30, donation28, incomeTaxAfter47);
+            
+            // 申告後の住民税月額を計算
+            const residentTaxMonthlyAfter = Math.floor(residentTaxAfter / 12);
+            
+            // 申告後の合計税額
+            const totalTaxAfter = incomeTaxAfter + residentTaxAfter;
+            
+            // 差額を計算
+            const incomeTaxDiff = incomeTaxBefore - incomeTaxAfter;
+            const residentTaxDiff = residentTaxBefore - residentTaxAfter;
+            const residentTaxMonthlyDiff = residentTaxMonthlyBefore - residentTaxMonthlyAfter;
+            const totalTaxDiff = totalTaxBefore - totalTaxAfter;
+            
+            // 節税額
+            const taxSaving = totalTaxDiff;
+            
+            // 結果を表示
+            document.getElementById('incomeTaxBefore').textContent = formatNumber(incomeTaxBefore) + '円';
+            document.getElementById('incomeTaxAfter').textContent = formatNumber(incomeTaxAfter) + '円';
+            document.getElementById('incomeTaxDiff').textContent = formatNumber(incomeTaxDiff) + '円';
+            
+            document.getElementById('residentTaxBefore').textContent = formatNumber(residentTaxBefore) + '円';
+            document.getElementById('residentTaxAfter').textContent = formatNumber(residentTaxAfter) + '円';
+            document.getElementById('residentTaxDiff').textContent = formatNumber(residentTaxDiff) + '円';
+            
+            document.getElementById('residentTaxMonthlyBefore').textContent = formatNumber(residentTaxMonthlyBefore) + '円';
+            document.getElementById('residentTaxMonthlyAfter').textContent = formatNumber(residentTaxMonthlyAfter) + '円';
+            document.getElementById('residentTaxMonthlyDiff').textContent = formatNumber(residentTaxMonthlyDiff) + '円';
+            
+            document.getElementById('totalTaxBefore').textContent = formatNumber(totalTaxBefore) + '円';
+            document.getElementById('totalTaxAfter').textContent = formatNumber(totalTaxAfter) + '円';
+            document.getElementById('totalTaxDiff').textContent = formatNumber(totalTaxDiff) + '円';
+            
+            document.getElementById('taxSaving').textContent = formatNumber(taxSaving) + '円';
+            
+            // 印刷ページの値も更新
+            document.getElementById('printIncomeTaxBefore').textContent = formatNumber(incomeTaxBefore) + '円';
+            document.getElementById('printResidentTaxBefore').textContent = formatNumber(residentTaxBefore) + '円';
+            document.getElementById('printResidentTaxMonthlyBefore').textContent = formatNumber(residentTaxMonthlyBefore) + '円';
+            document.getElementById('printTotalTaxBefore').textContent = formatNumber(totalTaxBefore) + '円';
+            
+            document.getElementById('printIncomeTaxAfter').textContent = formatNumber(incomeTaxAfter) + '円';
+            document.getElementById('printResidentTaxAfter').textContent = formatNumber(residentTaxAfter) + '円';
+            document.getElementById('printResidentTaxMonthlyAfter').textContent = formatNumber(residentTaxMonthlyAfter) + '円';
+            document.getElementById('printTotalTaxAfter').textContent = formatNumber(totalTaxAfter) + '円';
+            
+            // 差額の表示用データも更新
+            document.getElementById('printIncomeTaxDiff').textContent = formatNumber(incomeTaxDiff) + '円';
+            document.getElementById('printResidentTaxDiff').textContent = formatNumber(residentTaxDiff) + '円';
+            document.getElementById('printResidentTaxMonthlyDiff').textContent = formatNumber(residentTaxMonthlyDiff) + '円';
+            document.getElementById('printTotalTaxDiff').textContent = formatNumber(totalTaxDiff) + '円';
+            
+            // 節税額
+            document.getElementById('printTaxSaving').textContent = formatNumber(taxSaving) + '円';
+            
+            // 顧客名と年度を更新
+            const customerName = document.getElementById('customerName').value || '顧客様';
+            const taxYear = document.getElementById('taxYear').value || '';
+            
+            // 「様」が既に含まれていない場合にのみ追加
+            const formattedCustomerName = customerName.trim().endsWith('様') ? customerName : customerName + ' 様';
+            document.getElementById('printCustomerName').textContent = formattedCustomerName;
+            
+            document.getElementById('printTaxYear').textContent = taxYear ? '令和' + taxYear + '年' : '';
+            
+            // 担当者名を更新
+            const staffName = document.getElementById('staffName').value || '';
+            document.getElementById('printStaffName').textContent = staffName ? '担当 ' + staffName : '担当者名';
+            
+            // 計算日を設定
+            const today = new Date();
+            const dateStr = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
+            document.getElementById('calculationDate').textContent = dateStr;
+            
+            // 結果を表示
+            document.getElementById('results').classList.remove('hidden');
+        }
+        
+        function printResults() {
+            // 計算が実行されていない場合は計算実行
+            if (document.getElementById('results').classList.contains('hidden')) {
+                calculateTax();
+            }
+            
+            // 印刷ダイアログを表示
+            window.print();
+        }
+    </script>
+</body>
+</html>
