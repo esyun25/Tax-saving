@@ -282,20 +282,6 @@
             display: flex;
             align-items: center;
         }
-        .company-logo {
-            width: 32px;
-            height: 32px;
-            background-color: #614FE0;
-            margin-right: 12px;
-            border-radius: 8px;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            color: white;
-            font-weight: 600;
-        }
         
         .hidden {
             display: none;
@@ -364,11 +350,6 @@
         <div class="form-group">
             <label for="totalDeduction29">合計控除額 (29番):</label>
             <input type="number" id="totalDeduction29" placeholder="0" min="0">
-        </div>
-        
-        <div class="form-group">
-            <label for="taxableIncome30">課税所得金額 (30番):</label>
-            <input type="number" id="taxableIncome30" placeholder="0" min="0">
         </div>
         
         <div class="form-group">
@@ -507,33 +488,26 @@
     </div>
     
     <script>
-        function formatNumber(num) {
-            return num.toLocaleString('ja-JP');
-        }
-        
-        function roundDown(num) {
-            return Math.floor(num);
-        }
-        
-        function calculateIncomeTaxBefore(income) {
-            // 申告前の所得税計算 (Excel の式に基づいた所得区分と税率の実装)
+        // 所得税率を決定する関数
+        function getTaxRate(income) {
             if (income < 1949000) {
-                return roundDown(income * 0.05);
+                return 0.05; // 5%
             } else if (income < 3299000) {
-                return roundDown(income * 0.1);
+                return 0.1; // 10%
             } else if (income < 6949000) {
-                return roundDown(income * 0.2);
+                return 0.2; // 20%
             } else if (income < 8999000) {
-                return roundDown(income * 0.23);
+                return 0.23; // 23%
             } else if (income < 17999000) {
-                return roundDown(income * 0.33);
+                return 0.33; // 33%
             } else if (income < 39999000) {
-                return roundDown(income * 0.4);
+                return 0.4; // 40%
             } else {
-                return roundDown(income * 0.45);
+                return 0.45; // 45%
             }
         }
         
+        // 申告前住民税額の計算
         function calculateResidentTaxBefore(incomeValue, deductionValue) {
             // 申告前住民税額の計算: (所得 - 控除) × 10% + 10000円
             const taxBase = incomeValue - deductionValue;
@@ -543,9 +517,15 @@
             return Math.floor((taxBase * 0.1 + 10000) / 100) * 100;
         }
         
+        // 申告後住民税額の計算
         function calculateResidentTaxAfter(taxableIncome, donationAmount, incomeTaxAfter) {
+            // 課税所得金額が0の場合は0円を返す
+            if (taxableIncome <= 0) return 0;
+            
             // E19の計算: 寄付金控除額(28番) - 申告後の所得税額(47番)
-            const e19Value = Math.max(0, donationAmount - incomeTaxAfter);
+            // 寄付金控除額が0やnullの場合は0を設定
+            const donationValue = donationAmount || 0;
+            const e19Value = Math.max(0, donationValue - incomeTaxAfter);
             
             // 申告後住民税額の計算: 課税所得金額の10%+10000から、E19を引く
             const basicResidentTax = taxableIncome * 0.1 + 10000;
@@ -554,9 +534,18 @@
             const adjustedResidentTax = Math.max(0, basicResidentTax - e19Value);
             
             // 100円以下切り捨て
-            return Math.floor(adjustedResidentTax / 100) * 100;
+            const finalTax = Math.floor(adjustedResidentTax / 100) * 100;
+            
+            // 仕様変更：10,000円以下の場合は0円
+            return finalTax <= 10000 ? 0 : finalTax;
         }
         
+        // 数値のフォーマット（カンマ区切り）
+        function formatNumber(num) {
+            return num.toLocaleString('ja-JP');
+        }
+        
+        // 計算関数
         function calculateTax() {
             // 入力値を取得
             const income6 = Number(document.getElementById('income6').value) || 0;
@@ -564,17 +553,27 @@
             const deduction25 = Number(document.getElementById('deduction25').value) || 0;
             const donation28 = Number(document.getElementById('donation28').value) || 0;
             const totalDeduction29 = Number(document.getElementById('totalDeduction29').value) || 0;
-            const taxableIncome30 = Number(document.getElementById('taxableIncome30').value) || 0;
             const incomeTaxAfter47 = Number(document.getElementById('incomeTaxAfter47').value) || 0;
             const withholding50 = Number(document.getElementById('withholding50').value) || 0;
             
-            // 申告前の所得税額を計算
+            // 課税所得金額を計算（12番 - 29番 - E6）
+            // まず所得税率を計算するための仮の課税所得金額を計算
+            const tempTaxableIncome = Math.max(0, income12 - totalDeduction29);
+            const taxRate = getTaxRate(tempTaxableIncome);
+            
+            // E6の計算: 28番（寄付金控除額）× 所得税率
+            const e6Value = Math.floor(donation28 * taxRate);
+            
+            // 最終的な課税所得金額 = 12番 - 29番 - E6
+            const taxableIncome = Math.max(0, tempTaxableIncome - e6Value);
+            
+            // 申告前の所得税額
             const incomeTaxBefore = withholding50;
             
-            // 申告前の住民税額を計算
+            // 申告前の住民税額
             const residentTaxBefore = calculateResidentTaxBefore(income6, deduction25);
             
-            // 申告前の住民税月額を計算
+            // 申告前の住民税月額
             const residentTaxMonthlyBefore = Math.floor(residentTaxBefore / 12);
             
             // 申告前の合計税額
@@ -583,10 +582,10 @@
             // 申告後の所得税額
             const incomeTaxAfter = incomeTaxAfter47;
             
-            // 申告後の住民税額を計算 (寄付金控除額とE19の計算を考慮)
-            const residentTaxAfter = calculateResidentTaxAfter(taxableIncome30, donation28, incomeTaxAfter47);
+            // 申告後の住民税額（課税所得金額を12番-29番-E6で計算したものを使用）
+            const residentTaxAfter = calculateResidentTaxAfter(taxableIncome, donation28, incomeTaxAfter47);
             
-            // 申告後の住民税月額を計算
+            // 申告後の住民税月額
             const residentTaxMonthlyAfter = Math.floor(residentTaxAfter / 12);
             
             // 申告後の合計税額
@@ -663,6 +662,7 @@
             document.getElementById('results').classList.remove('hidden');
         }
         
+        // 印刷関数
         function printResults() {
             // 計算が実行されていない場合は計算実行
             if (document.getElementById('results').classList.contains('hidden')) {
@@ -674,4 +674,3 @@
         }
     </script>
 </body>
-</html>
